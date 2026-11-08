@@ -67,36 +67,53 @@ def ask(prompt, schema=None, system=SYSTEM, stage="generic", job_id=None, retrie
 def embed(texts, kind="document", stage="embed", job_id=None, batch=32):
     prefix = "search_document: " if kind == "document" else "search_query: "
     t, vecs = time.time(), []
-    try:
-        if config.IS_CLOUD:
-            # --- Cloud Path (Google Gemini Cloud API - Batch Optimized) ---
-            # Process texts in groups of 32 chunks per API call to protect daily request limits
-            for i in range(0, len(texts), batch):
-                # Pacing pause between batches to protect tokens-per-minute limits
-                if i > 0:
-                    time.sleep(2.0)
+    
+    # Set up key rotation to switch automatically if a key hits a daily 429 quota wall
+    api_keys = [os.environ.get("GEMINI_API_KEY")]
+    if os.environ.get("GEMINI_API_KEY_BACKUP"):
+        api_keys.append(os.environ.get("GEMINI_API_KEY_BACKUP"))
+        
+    current_key_idx = 0
+
+    if config.IS_CLOUD:
+        # --- Cloud Path (Google Gemini Cloud API with Smart Batching + Key Rotation) ---
+        i = 0
+        while i < len(texts):
+            # Pacing delay between batch executions
+            if i > 0:
+                time.sleep(2.0)
                 
-                # Format a batch slice of text data chunks
-                batch_texts = [prefix + x[:2000] for x in texts[i:i + batch]]
-                
-                # Make a single call passing multiple contents at once
+            batch_texts = [prefix + x[:2000] for x in texts[i:i + batch]]
+            
+            try:
                 response = gemini_client.models.embed_content(
                     model=config.EMBED_MODEL,
                     contents=batch_texts
                 )
-                
-                # Extract the nested vector lists out of the batch array response object
+                # Success: extract vectors and step to next batch slice
                 for embedding in response.embeddings:
                     vecs.append(embedding.values)
-        else:
-            # --- Local Path (Ollama) ---
-            for i in range(0, len(texts), batch):
-                part = [prefix + x[:2000] for x in texts[i:i + batch]]
-                vecs += ollama_client.embed(model=config.EMBED_MODEL, input=part)["embeddings"]
-    except Exception as e:
-        db.log("embed", stage, (time.time() - t) * 1000, model=config.EMBED_MODEL, job_id=job_id, error=e)
-        raise RuntimeError(f"Embedding failed: {e}")
-        
+                i += batch
+                
+            except Exception as e:
+                # If a 429 quota error hits and we have an unused backup key, rotate to it automatically
+                if "429" in str(e) and current_key_idx + 1 < len(api_keys):
+                    current_key_idx += 1
+                    print(f"Daily quota hit. Rotating to backup Gemini API Key index: {current_key_idx}")
+                    # Re-initialize client framework with the fresh backup token
+                    from google import genai
+                    gemini_client = genai.Client(api_key=api_keys[current_key_idx])
+                    continue  # Retry the exact same batch slice with the backup credential
+                else:
+                    # Log failure if no alternate keys remain
+                    db.log("embed", stage, (time.time() - t) * 1000, model=config.EMBED_MODEL, job_id=job_id, error=e)
+                    raise RuntimeError(f"Embedding failed: {e}")
+    else:
+        # --- Local Path (Ollama Fallback) ---
+        for i in range(0, len(texts), batch):
+            part = [prefix + x[:2000] for x in texts[i:i + batch]]
+            vecs += ollama_client.embed(model=config.EMBED_MODEL, input=part)["embeddings"]
+            
     db.log("embed", stage, (time.time() - t) * 1000, model=config.EMBED_MODEL, job_id=job_id)
     v = np.array(vecs, dtype="float32")
     norms = np.linalg.norm(v, axis=1, keepdims=True)
