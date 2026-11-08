@@ -11,7 +11,7 @@ IS_CLOUD = "GROQ_API_KEY" in os.environ
 
 if IS_CLOUD:
     OLLAMA_HOST = ""  # Not needed in the cloud
-    LLM_MODEL = os.getenv("LLM_MODEL", "llama3-8b-8192") # Free high-speed Llama 3 model on Groq
+    LLM_MODEL = os.getenv("LLM_MODEL", "llama-3.1-8b-instant") # Free high-speed Llama 3 model on Groq
     EMBED_MODEL = os.getenv("EMBED_MODEL", "all-MiniLM-L6-v2") # Memory-efficient embedding model
 else:
     OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
