@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repo2Design | Understand any repository's architecture</title>
+<meta name="description" content="Paste a GitHub repository and get its architecture flow, REST API map and system design interview questions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --surface2:#f1efe8; --ink:#1c2420; --muted:#667068; --line:#e4e0d4;
+  --accent:#0e7c6b; --accent2:#4f6bed; --accent-ink:#fff; --soft:#e2f1ed; --danger:#c0392b;
+  --grad:linear-gradient(135deg,#0e7c6b 0%,#4f6bed 100%);
+  --shadow:0 1px 2px rgba(28,36,32,.06),0 10px 28px rgba(28,36,32,.07);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif; --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --radius:16px;
+}
+:root[data-theme="dark"]{
+  --bg:#0f1311; --surface:#171d1a; --surface2:#1e2622; --ink:#ecebe3; --muted:#9ba49c; --line:#2a342f;
+  --accent:#4fd1b5; --accent2:#8da0ff; --accent-ink:#06130f; --soft:#17302a; --danger:#ef7d6f;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 400px at 10% -5%,rgba(79,107,237,.10),transparent 60%),radial-gradient(800px 380px at 95% 0%,rgba(14,159,126,.10),transparent 60%);background-repeat:no-repeat}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:8px}
+.hidden{display:none!important}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+svg.ic{width:18px;height:18px;flex:none}
+
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font:600 1.2rem var(--serif);background:none;border:0;padding:0}
+.logo{width:32px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;color:#fff}
+.logo svg{width:18px;height:18px}
+.actions{display:flex;gap:8px;position:relative;align-items:center}
+.pbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:.85rem;font-weight:500;color:var(--muted);transition:.15s}
+.pbtn:hover{color:var(--ink);border-color:var(--accent)}
+.pbtn.primary{background:var(--grad);color:#fff;border-color:transparent}
+body:not(.compact) #newBtn{display:none}
+.pop{position:absolute;right:0;top:48px;width:min(340px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;z-index:45}
+.pop h4{margin:6px 8px;font:600 .7rem var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.pop .item{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:10px}
+.pop .item:hover{background:var(--soft)}
+.pop .item small{display:block;color:var(--muted);font-size:.74rem}
+.pop .empty{padding:10px;color:var(--muted);font-size:.85rem}
+
+/* ---------- landing ---------- */
+.hero{padding:76px 0 30px;text-align:center}
+body.compact .hero{padding:26px 0 8px}
+body.compact .hero h1,body.compact .lede,body.compact .eyebrow,body.compact .examples,body.compact .trio{display:none}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font:600 .72rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);background:var(--soft);padding:6px 14px;border-radius:999px;margin-bottom:20px}
+.hero h1{font:500 clamp(2.1rem,5.2vw,3.5rem)/1.1 var(--serif);margin:0 auto 16px;max-width:800px;letter-spacing:-.015em}
+.hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{color:var(--muted);max-width:640px;margin:0 auto 30px;font-size:1.06rem}
+.searchbar{display:flex;align-items:center;gap:8px;max-width:700px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 20px;box-shadow:var(--shadow);transition:.15s}
+.searchbar:focus-within{border-color:var(--accent2);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent2) 18%,transparent),var(--shadow)}
+.searchbar svg{color:var(--muted)}
+.searchbar input{flex:1;border:0;background:none;outline:0;padding:11px 4px;min-width:0;font-size:1rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;background:var(--grad);color:#fff;padding:12px 24px;font-weight:600;transition:.15s;box-shadow:0 4px 14px rgba(79,107,237,.28)}
+.btn:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.btn:disabled{opacity:.55;cursor:wait;transform:none}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--accent);filter:none}
+.btn.sm{padding:7px 14px;font-size:.84rem}
+.hint{min-height:22px;margin-top:10px;font-size:.86rem;color:var(--muted)}
+.hint.err{color:var(--danger)}
+.examples{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:.85rem}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 13px;font-size:.82rem;transition:.15s}
+.chip:hover{border-color:var(--accent);background:var(--soft)}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0 70px}
+.trio>div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;transition:.2s}
+.trio>div:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.trio h3{font:500 1.15rem var(--serif);margin:14px 0 4px}
+.trio p{margin:0;color:var(--muted);font-size:.9rem}
+.ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.ico svg{width:21px;height:21px}
+
+/* ---------- cards / progress ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin:0 0 16px}
+.card h2{font:500 1.3rem var(--serif);margin:0 0 10px}
+.card h3{font:600 .95rem var(--sans);margin:0 0 8px}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.prog-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.prog-head b{font:500 1.2rem var(--serif)}
+.bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:14px 0 20px}
+.bar>div{height:100%;width:0;background:var(--grad);border-radius:99px;transition:width .6s ease}
+.steps{list-style:none;display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:0;padding:0}
+.steps li{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:.74rem;color:var(--muted)}
+.dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);background:var(--surface);font-size:.72rem;font-weight:700;transition:.3s}
+.dot svg{width:14px;height:14px}
+.steps li.active{color:var(--ink)}
+.steps li.active .dot{border-color:var(--accent2);color:var(--accent2);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent2) 18%,transparent);animation:pulse 1.6s infinite}
+.steps li.done .dot{background:var(--grad);border-color:transparent;color:#fff}
+@keyframes pulse{50%{box-shadow:0 0 0 8px transparent}}
+.err-box{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 7%,var(--surface))}
+.err-box b{color:var(--danger)}
+
+/* ---------- results shell + responsive navigation ---------- */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;margin-top:10px;align-items:start}
+.side{position:sticky;top:80px}
+.repo-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.repo-card b{display:block;font:600 .92rem var(--sans);word-break:break-word}
+.repo-card span{font:400 .75rem var(--mono);color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.navbtn{display:flex;align-items:center;gap:12px;padding:11px 14px;border:0;border-radius:12px;background:none;color:var(--muted);font-weight:500;text-align:left;transition:.15s}
+.navbtn:hover{background:var(--surface);color:var(--ink)}
+.navbtn[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.navbtn[aria-current="page"] svg{color:var(--c)}
+.navbtn em{margin-left:auto;font-style:normal;font-size:.72rem;background:var(--surface2);color:var(--muted);padding:1px 9px;border-radius:99px}
+.repo-head{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin:0 0 18px}
+.repo-head h2{font:500 clamp(1.5rem,3vw,2.1rem)/1.15 var(--serif);margin:0;word-break:break-word}
+.repo-head h2 a{color:inherit;text-decoration:none;border-bottom:2px solid transparent;transition:.15s}
+.repo-head h2 a:hover{border-color:var(--accent)}
+.repo-head .sub{font-size:.8rem;color:var(--muted)}
+.exp{position:relative}
+.exp .pop{top:44px}
+.panel{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:0}
+  .side{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:42;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .repo-card{display:none}
+  .nav{flex-direction:row;justify-content:space-around}
+  .navbtn{flex-direction:column;gap:3px;padding:7px 4px;font-size:.66rem;flex:1;align-items:center;text-align:center;border-radius:10px}
+  .navbtn em{display:none}
+  body.has-result{padding-bottom:84px}
+  .toast{bottom:96px!important}
+}
+@media (max-width:640px){
+  .pbtn span.lbl{display:none}.pbtn{padding:9px 11px}
+  .hero{padding-top:44px}
+  .trio{grid-template-columns:1fr}
+  .steps{grid-template-columns:repeat(4,1fr);row-gap:14px}
+  .searchbar{border-radius:22px;flex-wrap:wrap;padding:10px}.searchbar .btn{width:100%}
+  .wrap{padding:0 14px}
+}
+
+/* ---------- overview ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;gap:12px;align-items:center}
+.stat b{display:block;font:500 1.65rem/1.1 var(--serif)}
+.stat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.lead{font:400 1.1rem/1.7 var(--serif);margin:0 0 14px}
+.pill{display:inline-block;padding:3px 12px;border-radius:99px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c);font-size:.78rem;font-weight:600;margin:0 6px 6px 0}
+.langbar{display:flex;height:10px;border-radius:99px;overflow:hidden;margin:10px 0 10px;background:var(--surface2)}
+.langbar i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
+.layerchips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.lchip{display:flex;gap:10px;align-items:center;padding:8px 14px 8px 10px;border-radius:12px;background:color-mix(in srgb,var(--c) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 28%,var(--line));color:var(--ink);font-size:.86rem;font-weight:500}
+.lchip:hover{border-color:var(--c)}
+.lchip .ico{width:30px;height:30px;border-radius:9px}.lchip .ico svg{width:16px;height:16px}
+.lchip b{font-weight:700;margin-left:2px}
+
+/* ---------- architecture flow ---------- */
+.arch-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.legend2{display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);align-items:center;margin-top:6px}
+.legend2 i{display:inline-block;width:26px;height:0;border-top:3px solid var(--muted);vertical-align:middle;margin-right:6px}
+.legend2 i.d{border-top-style:dashed}
+.legend2.nolines .ln{display:none}
+.flowbox{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;overflow:hidden}
+.flow{position:relative}
+.ribbon{display:flex;align-items:center;gap:10px;font:600 .68rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.ribbon i{flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,#4f6bed,#0e9f7e,#e08a1e,#8b5cf6);position:relative}
+.ribbon i::after{content:"";position:absolute;right:-2px;top:-5px;border:6px solid transparent;border-left:9px solid #8b5cf6;border-right:0}
+.heads,.cols{display:grid;column-gap:58px;position:relative;z-index:1}
+.head{display:flex;align-items:center;gap:8px;font:700 .72rem var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--c);padding-bottom:8px;margin-bottom:14px;border-bottom:2px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.head svg{width:15px;height:15px}
+.head em{margin-left:auto;font-style:normal;background:color-mix(in srgb,var(--c) 15%,transparent);padding:0 8px;border-radius:99px;font-size:.68rem}
+.col{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.col-title{display:none}
+.tiles{display:flex;flex-direction:column;gap:20px}
+.edges{position:absolute;left:0;top:0;z-index:0;overflow:visible;pointer-events:none}
+.edge path.line{fill:none;stroke-linecap:round;transition:opacity .25s}
+.edge .hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:default}
+.edge.weak path.line{stroke-dasharray:5 6;opacity:.5}
+.edge.faded{opacity:.08}
+.edge.on path.line{stroke-dasharray:8 6;opacity:1;animation:dash .9s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-14}}
+.edge .lbl{opacity:0;transition:opacity .2s}
+.edge.on .lbl,.edge:hover .lbl{opacity:1}
+.support{position:relative;z-index:1;margin-top:26px}
+.support .tiles{flex-direction:row;flex-wrap:wrap}
+.support .tile{width:calc(25% - 15px);min-width:190px}
+.tile{position:relative;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:14px;padding:12px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:transform .15s,box-shadow .2s,opacity .25s,border-color .15s;min-width:0}
+.tile:hover{transform:translateY(-2px);box-shadow:0 10px 24px color-mix(in srgb,var(--c) 26%,transparent)}
+.tile.sel{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 28%,transparent),0 12px 28px color-mix(in srgb,var(--c) 28%,transparent)}
+.tile.dim{opacity:.32}
+.t-top{display:flex;gap:10px;align-items:center}
+.t-ic{flex:none;width:36px;height:36px;border-radius:11px;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);display:grid;place-items:center}
+.t-ic svg{width:19px;height:19px}
+.t-name{font:600 .86rem/1.25 var(--mono);overflow-wrap:anywhere}
+.t-sub{font-size:.72rem;color:var(--muted)}
+.t-desc{margin:9px 0 0;font-size:.78rem;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.t-foot{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.t-chip{font-size:.68rem;padding:2px 9px;border-radius:99px;background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c);font-weight:700}
+.tap{margin:12px 0 0;font-size:.8rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+/* stacked (narrow) layout */
+.flow.stack .heads,.flow.stack .ribbon{display:none}
+.flow.stack .cols{grid-template-columns:1fr!important;row-gap:0}
+.flow.stack .col{position:relative;padding-bottom:34px}
+.flow.stack .col-title{display:flex;align-items:center;gap:8px;font:700 .72rem var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--c);margin-bottom:12px}
+.flow.stack .col-title svg{width:15px;height:15px}
+.flow.stack .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.flow.stack .col:not(:last-child)::after{content:"";position:absolute;left:50%;bottom:6px;width:2px;height:20px;background:var(--line)}
+.flow.stack .col:not(:last-child)::before{content:"";position:absolute;left:calc(50% - 6px);bottom:0;border:6px solid transparent;border-top:8px solid var(--muted);border-bottom:0}
+.flow.stack .support .tile{width:auto}
+
+/* ---------- detail drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,14,12,.45);z-index:48;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:60px;right:0;bottom:0;width:min(440px,100vw);background:var(--surface);border-left:1px solid var(--line);box-shadow:-16px 0 44px rgba(0,0,0,.14);transform:translateX(104%);visibility:hidden;transition:transform .3s ease,visibility 0s .3s;z-index:50;overflow-y:auto;overscroll-behavior:contain}
+.drawer.open{transform:none;visibility:visible;transition:transform .3s ease}
+.d-head{position:sticky;top:0;z-index:2;background:var(--surface);padding:18px 20px 14px;border-bottom:1px solid var(--line);border-top:5px solid var(--c)}
+.d-title{display:flex;gap:12px;align-items:center}
+.d-title .ico{width:44px;height:44px}
+.d-title h3{font:600 1.05rem/1.25 var(--mono);margin:0;word-break:break-all}
+.d-title span.lay{display:inline-block;margin-top:3px;font:700 .66rem var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:99px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.d-x{position:absolute;right:14px;top:16px;border:1px solid var(--line);background:var(--surface);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;color:var(--muted)}
+.d-x:hover{color:var(--ink);border-color:var(--accent)}
+.d-body{padding:6px 20px 28px}
+.d-sec{margin-top:20px}
+.d-sec h4{display:flex;gap:8px;align-items:center;margin:0 0 9px;font:700 .7rem var(--sans);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.d-sec h4 svg{width:15px;height:15px;color:var(--c)}
+.d-sec p{margin:0;font-size:.92rem}
+.d-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.d-stat{background:var(--surface2);border-radius:12px;padding:10px 12px}
+.d-stat b{display:block;font:500 1.3rem/1.1 var(--serif)}
+.d-stat span{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dchips{display:flex;gap:6px;flex-wrap:wrap}
+.dchip{display:inline-flex;gap:6px;align-items:center;padding:5px 11px;border-radius:99px;border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));background:color-mix(in srgb,var(--c) 9%,transparent);font:600 .76rem var(--mono);color:var(--ink)}
+.dchip:hover{background:color-mix(in srgb,var(--c) 20%,transparent)}
+.dchip svg{width:13px;height:13px;color:var(--c)}
+.dchip small{font:600 .66rem var(--sans);color:var(--c)}
+.none{font-size:.85rem;color:var(--muted)}
+.d-ep{display:grid;grid-template-columns:64px 1fr;gap:4px 10px;padding:8px 0;border-top:1px solid var(--line);align-items:start}
+.d-ep:first-of-type{border-top:0}
+.d-ep code{font:500 .82rem var(--mono);word-break:break-all}
+.d-ep small{grid-column:2;color:var(--muted);font-size:.78rem}
+.d-file,.d-sym{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;font:500 .8rem var(--mono);color:var(--ink);text-decoration:none;word-break:break-all}
+.d-file:hover,.d-sym:hover{background:var(--surface2)}
+.d-file svg,.d-sym svg{width:15px;height:15px;color:var(--c);flex:none}
+.d-file small,.d-sym small{margin-left:auto;font:400 .72rem var(--sans);color:var(--muted);white-space:nowrap;padding-left:8px}
+.d-link{display:inline-flex;gap:7px;align-items:center;margin-top:12px;font-size:.84rem;font-weight:600;color:var(--c);text-decoration:none}
+.d-link:hover{text-decoration:underline}
+@media (max-width:760px){
+  .scrim{display:block}
+  .drawer{top:auto;left:0;right:0;bottom:0;width:auto;height:78vh;border-left:0;border-radius:22px 22px 0 0;transform:translateY(104%);box-shadow:0 -16px 44px rgba(0,0,0,.25)}
+  .drawer.open{transform:none}
+  .d-head{border-radius:22px 22px 0 0}
+}
+@media (min-width:761px){.scrim{display:none}}
+
+/* ---------- API / QA / chat ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.search{flex:1;min-width:200px;border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:10px 16px;outline:0}
+.search:focus{border-color:var(--accent2)}
+.ep{display:grid;grid-template-columns:78px 1fr auto;gap:6px 14px;align-items:start;padding:13px 4px;border-top:1px solid var(--line)}
+.ep:first-child{border-top:0}
+.m{font:700 .7rem var(--mono);text-align:center;padding:5px 0;border-radius:7px;letter-spacing:.04em}
+.m-GET{background:#d9f1e4;color:#1b6b45}.m-POST{background:#fde8d0;color:#9a5410}.m-PUT{background:#dce6fb;color:#2a4a9a}
+.m-DELETE{background:#fadad6;color:#a12c20}.m-PATCH{background:#ece0fa;color:#6b3fa8}.m-ANY{background:var(--surface2);color:var(--muted)}
+:root[data-theme="dark"] .m-GET{background:#17382a;color:#8fdcae}:root[data-theme="dark"] .m-POST{background:#43301b;color:#f0b97f}
+:root[data-theme="dark"] .m-PUT{background:#1f3057;color:#a3bbf5}:root[data-theme="dark"] .m-DELETE{background:#48211d;color:#f2a79c}
+:root[data-theme="dark"] .m-PATCH{background:#33264a;color:#cdb4f0}
+.ep code.path{font:500 .92rem var(--mono);cursor:pointer;word-break:break-all}
+.ep code.path:hover{color:var(--accent2)}
+.ep p{margin:3px 0 0;color:var(--muted);font-size:.88rem}
+.ep .meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.ep .src{font:400 .74rem var(--mono);color:var(--muted);white-space:nowrap}
+.ctag{border:0;font:700 .68rem var(--sans);padding:3px 10px;border-radius:99px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.ctag:hover{background:color-mix(in srgb,var(--c) 26%,transparent)}
+.empty-state{text-align:center;padding:36px 10px;color:var(--muted)}
+details.qa{border:1px solid var(--line);border-radius:14px;background:var(--surface);margin:0 0 10px;overflow:hidden;transition:.2s}
+details.qa[open]{box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent2) 40%,var(--line))}
+details.qa summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;font-weight:600}
+details.qa summary::-webkit-details-marker{display:none}
+details.qa .no{flex:none;width:28px;height:28px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font:700 .8rem var(--sans)}
+details.qa summary::after{content:"+";margin-left:auto;font-size:1.4rem;line-height:1;color:var(--muted);transition:transform .2s}
+details.qa[open] summary::after{transform:rotate(45deg)}
+details.qa .ans{padding:0 18px 18px 60px;white-space:pre-wrap;color:var(--ink)}
+.sugg{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.thread{display:flex;flex-direction:column;gap:14px;margin:12px 0 18px}
+.msg{max-width:90%;padding:12px 16px;border-radius:18px;white-space:pre-wrap;word-break:break-word}
+.msg.u{align-self:flex-end;background:var(--grad);color:#fff;border-bottom-right-radius:5px}
+.msg.a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+.srcs{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.srcs code{font-size:.72rem;background:var(--surface2);color:var(--muted);padding:2px 9px;border-radius:7px}
+.typing i{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:var(--muted);animation:bounce 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{50%{transform:translateY(-4px);opacity:.4}}
+.composer{display:flex;gap:8px;position:sticky;bottom:14px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 20px;box-shadow:var(--shadow)}
+.composer input{flex:1;border:0;background:none;outline:0;min-width:0}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:999px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:70}
+.toast.show{opacity:1;transform:translateX(-50%)}
+footer{padding:36px 0 56px;text-align:center;color:var(--muted);font-size:.82rem}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}.ep{grid-template-columns:62px 1fr}.ep .meta{grid-column:2;align-items:flex-start;flex-direction:row;flex-wrap:wrap}details.qa .ans{padding-left:18px}}
+@media print{
+  .top,.side,.hero,.exp,.composer,.sugg,footer,.toast,.drawer,.scrim,.tap{display:none!important}
+  .shell{display:block}.panel{display:block!important;animation:none}body{background:#fff;color:#000}
+  details.qa{break-inside:avoid}.edge .lbl{opacity:1}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <button class="brand" id="home" type="button" aria-label="Repo2Design home"><span class="logo"><i data-ic="flow"></i></span>Repo2Design</button>
+    <div class="actions">
+      <button class="pbtn primary" id="newBtn" type="button"><i data-ic="plus"></i><span class="lbl">New analysis</span></button>
+      <button class="pbtn" id="histBtn" type="button" aria-haspopup="true" aria-expanded="false"><i data-ic="clock"></i><span class="lbl">Recent</span></button>
+      <button class="pbtn" id="themeBtn" type="button" aria-label="Toggle light and dark theme"><span id="themeIc" style="display:inline-flex"><i data-ic="moon"></i></span><span class="lbl" id="themeLbl">Dark</span></button>
+      <div class="pop hidden" id="hist"></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero" id="hero">
+    <span class="eyebrow"><i data-ic="spark"></i>Codebase comprehension</span>
+    <h1>Understand any repository's <em>architecture</em> in minutes</h1>
+    <p class="lede">Paste a public GitHub repository. Receive a clear flow diagram of its components, a REST API map and system design interview questions drawn from the code itself.</p>
+    <form class="searchbar" id="form" autocomplete="off">
+      <i data-ic="link"></i>
+      <input id="url" type="text" inputmode="url" spellcheck="false" placeholder="https://github.com/owner/repository" aria-label="GitHub repository URL">
+      <button class="btn" id="go" type="submit">Analyze repository</button>
+    </form>
+    <div class="hint" id="hint" role="status"></div>
+    <div class="examples">Try an example:
+      <button class="chip" type="button" data-url="https://github.com/miguelgrinberg/microblog">microblog (Flask)</button>
+      <button class="chip" type="button" data-url="https://github.com/gothinkster/node-express-realworld-example-app">realworld (Express)</button>
+      <button class="chip" type="button" data-url="https://github.com/gothinkster/flask-realworld-example-app">realworld (Flask)</button>
+    </div>
+  </section>
+
+  <section class="trio" aria-label="What you get">
+    <div style="--c:#4f6bed"><span class="ico"><i data-ic="flow"></i></span><h3>Architecture flow</h3><p>Layered components with directional arrows. Click any tile for its files, symbols, endpoints and dependencies.</p></div>
+    <div style="--c:#0e9f7e"><span class="ico"><i data-ic="plug"></i></span><h3>REST API map</h3><p>Every route found in the code, searchable by method and linked back to its component.</p></div>
+    <div style="--c:#e08a1e"><span class="ico"><i data-ic="chat"></i></span><h3>Interview Q&amp;A and chat</h3><p>Design questions grounded in the code, plus a chat that cites the files it used.</p></div>
+  </section>
+
+  <section id="progress" class="card hidden" aria-live="polite">
+    <div class="prog-head"><b>Analyzing repository</b><span class="muted small" id="elapsed">0:00</span></div>
+    <div class="bar"><div id="fill"></div></div>
+    <ol class="steps" id="steps"></ol>
+    <p class="muted small" id="progMsg" style="margin:18px 0 0"></p>
+    <p class="muted small" style="margin:4px 0 0">Local models take a few minutes. Repeat requests for the same commit are instant.</p>
+  </section>
+
+  <section id="error" class="card err-box hidden" role="alert">
+    <b>Analysis could not be completed</b>
+    <p id="errMsg" style="margin:6px 0 12px"></p>
+    <button class="btn sm" id="retry" type="button">Try again</button>
+  </section>
+
+  <div id="result" class="shell hidden">
+    <aside class="side" id="side">
+      <div class="repo-card"><b id="sRepo"></b><span id="sCommit"></span></div>
+      <nav class="nav" id="nav" aria-label="Report sections"></nav>
+    </aside>
+    <section>
+      <div class="repo-head">
+        <div><div class="sub" id="commit"></div><h2 id="repoName"></h2></div>
+        <div class="exp">
+          <button class="btn ghost sm" id="expBtn" type="button" aria-haspopup="true"><i data-ic="download"></i>Export</button>
+          <div class="pop hidden" id="expMenu">
+            <button class="item" data-x="md"><i data-ic="file"></i><span>Markdown report</span></button>
+            <button class="item" data-x="json"><i data-ic="code"></i><span>JSON data</span></button>
+            <button class="item" data-x="mm"><i data-ic="flow"></i><span>Copy Mermaid diagram</span></button>
+            <button class="item" data-x="print"><i data-ic="file"></i><span>Print / save as PDF</span></button>
+          </div>
+        </div>
+      </div>
+      <div id="p-overview" class="panel" role="region"></div>
+      <div id="p-diagram" class="panel hidden" role="region"></div>
+      <div id="p-api" class="panel hidden" role="region"></div>
+      <div id="p-qa" class="panel hidden" role="region"></div>
+      <div id="p-chat" class="panel hidden" role="region"></div>
+    </section>
+  </div>
+</main>
+<footer>Repo2Design. Facts are extracted from the code; wording is written by a local language model, so verify critical details.</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="false" aria-labelledby="dTitle" aria-hidden="true"></aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- icons ---------- */
+const ICON = {
+  flow:'<rect x="3" y="3" width="8" height="8" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect x="13" y="13" width="8" height="8" rx="2"/>',
+  monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  plug:'<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0V8zM12 18v4"/>',
+  layers:'<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  database:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>',
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4 2.5-2.5z"/>',
+  layout:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  help:'<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4M12 17h.01"/>',
+  chat:'<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  code:'<path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>',
+  download:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+  ext:'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  cube:'<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  braces:'<path d="M9 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h2M15 3h2a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-2"/>',
+  route:'<circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H16a3.5 3.5 0 0 0 0-7H8a3.5 3.5 0 0 1 0-7h7.5"/>',
+  lines:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+  lang:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+  arrowin:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  arrowout:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  check:'<path d="M5 12l5 5 9-10"/>',
+};
+const ic = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ""}</svg>`;
+const hydrate = (root = document) => $$("[data-ic]", root).forEach((el) => { el.outerHTML = ic(el.dataset.ic); });
+hydrate();
+
+const LAYERS = {
+  client:  { label: "Clients",          color: "#4f6bed", icon: "monitor",  what: "Entry point" },
+  api:     { label: "Interface & API",  color: "#0e9f7e", icon: "plug",     what: "Interface / API" },
+  logic:   { label: "Business logic",   color: "#e08a1e", icon: "layers",   what: "Business logic" },
+  auth:    { label: "Security",         color: "#d6455d", icon: "shield",   what: "Security" },
+  data:    { label: "Data & storage",   color: "#8b5cf6", icon: "database", what: "Data & storage" },
+  support: { label: "Supporting code",  color: "#64748b", icon: "wrench",   what: "Supporting code" },
+};
+const COLORS = ["#4f6bed", "#0e9f7e", "#e08a1e", "#8b5cf6", "#d6455d", "#0891b2", "#7a8f5a", "#a65f6e"];
+const URL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+?(\.git)?\/?$/;
+const STAGES = [["Clone",3],["Analyze",20],["Index",25],["Overview",40],["Components",45],["Architecture",68],["Endpoints",75],["Q&A",88]];
+const S = { jobId: null, report: null, timer: null, tick: null, t0: 0, sel: null, tiles: new Map(), edges: [], edgeEls: [], flowReady: false, ro: null };
+
+/* ---------- utilities ---------- */
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 1900);
+}
+async function copy(text, label = "Copied") {
+  try { await navigator.clipboard.writeText(text); toast(label); } catch (e) { toast("Copy failed"); }
+}
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+async function api(path, opts) {
+  let r;
+  try { r = await fetch("/api" + path, opts); } catch (e) { throw new Error("Cannot reach the server. Is it running?"); }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Request failed (" + r.status + ")");
+  return data;
+}
+const post = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const repoName = (u) => u.replace("https://github.com/", "");
+const encPath = (p) => p.split("/").map(encodeURIComponent).join("/");
+const layerOf = (c) => LAYERS[c.layer] || LAYERS.logic;
+const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+
+/* ---------- theme, popovers ---------- */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#themeLbl").textContent = t === "dark" ? "Light" : "Dark";
+  $("#themeIc").innerHTML = ic(t === "dark" ? "sun" : "moon");
+  store.set("r2d_theme", t);
+}
+applyTheme(store.get("r2d_theme", matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+$("#themeBtn").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+
+function togglePop(btn, pop, onOpen) {
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    const wasHidden = pop.classList.contains("hidden");
+    $$(".pop").forEach((p) => p.classList.add("hidden"));
+    if (wasHidden) { onOpen && onOpen(); pop.classList.remove("hidden"); }
+    btn.setAttribute("aria-expanded", wasHidden);
+  };
+}
+document.addEventListener("click", (e) => { if (!e.target.closest(".pop")) $$(".pop").forEach((p) => p.classList.add("hidden")); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { $$(".pop").forEach((p) => p.classList.add("hidden")); if (S.sel) clearSel(); } });
+
+/* ---------- history ---------- */
+const hist = () => store.get("r2d_hist", []);
+function pushHist(id, url) { store.set("r2d_hist", [{ id, url, ts: Date.now() }, ...hist().filter((h) => h.url !== url)].slice(0, 8)); }
+togglePop($("#histBtn"), $("#hist"), () => {
+  const h = hist();
+  $("#hist").innerHTML = "<h4>Recent analyses</h4>" + (h.length
+    ? h.map((x) => `<button class="item" data-id="${esc(x.id)}">${ic("flow")}<span>${esc(repoName(x.url))}<small>${new Date(x.ts).toLocaleString()}</small></span></button>`).join("")
+    : '<div class="empty">Nothing yet. Analyze a repository to see it here.</div>');
+});
+$("#hist").onclick = async (e) => {
+  const b = e.target.closest(".item"); if (!b) return;
+  $("#hist").classList.add("hidden");
+  try { S.jobId = b.dataset.id; showReport(await api("/report/" + S.jobId)); }
+  catch (err) { store.set("r2d_hist", hist().filter((x) => x.id !== b.dataset.id)); toast("That report is no longer available"); }
+};
+
+/* ---------- start / poll ---------- */
+$$(".chip[data-url]").forEach((c) => c.onclick = () => { $("#url").value = c.dataset.url; $("#url").focus(); setHint(""); });
+function setHint(m, err) { $("#hint").textContent = m; $("#hint").className = "hint" + (err ? " err" : ""); }
+$("#url").addEventListener("input", () => setHint(""));
+$("#form").onsubmit = (e) => { e.preventDefault(); start($("#url").value.trim()); };
+$("#retry").onclick = () => start($("#url").value.trim());
+function reset() {
+  stop(); clearSel(); document.body.classList.remove("compact", "has-result");
+  ["#result", "#error", "#progress"].forEach((s) => $(s).classList.add("hidden"));
+  window.scrollTo({ top: 0 }); $("#url").focus();
+}
+$("#newBtn").onclick = reset; $("#home").onclick = reset;
+
+async function start(url) {
+  if (!URL_RE.test(url)) return setHint("Enter a link such as https://github.com/owner/repository", true);
+  setHint(""); clearSel();
+  document.body.classList.add("compact"); document.body.classList.remove("has-result");
+  ["#result", "#error"].forEach((s) => $(s).classList.add("hidden"));
+  $("#progress").classList.remove("hidden");
+  $("#go").disabled = true; setProgress(2, "Starting");
+  S.t0 = Date.now(); clearInterval(S.tick);
+  S.tick = setInterval(() => { const s = Math.floor((Date.now() - S.t0) / 1000); $("#elapsed").textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }, 1000);
+  try {
+    S.jobId = (await post("/analyze", { repo_url: url })).job_id;
+    clearInterval(S.timer); S.timer = setInterval(poll, 2500); poll();
+  } catch (e) { fail(e.message); }
+}
+function setProgress(p, msg) {
+  $("#fill").style.width = p + "%"; $("#progMsg").textContent = msg || "";
+  $("#steps").innerHTML = STAGES.map(([n, t], i) => {
+    const next = i < STAGES.length - 1 ? STAGES[i + 1][1] : 100;
+    const c = p >= next ? "done" : p >= t ? "active" : "";
+    return `<li class="${c}"><span class="dot">${c === "done" ? ic("check") : i + 1}</span>${esc(n)}</li>`;
+  }).join("");
+}
+function stop() { clearInterval(S.timer); clearInterval(S.tick); $("#go").disabled = false; }
+function fail(m) { stop(); $("#progress").classList.add("hidden"); $("#errMsg").textContent = m; $("#error").classList.remove("hidden"); }
+async function poll() {
+  try {
+    const j = await api("/jobs/" + S.jobId);
+    setProgress(j.progress, j.message + (j.cached ? " (from cache)" : ""));
+    if (j.status === "failed") return fail(j.error || "The analysis failed.");
+    if (j.status === "done") { stop(); const r = await api("/report/" + S.jobId); pushHist(S.jobId, r.repo_url); showReport(r); }
+  } catch (e) { fail(e.message); }
+}
+
+/* ---------- report shell + navigation ---------- */
+const TABS = [["overview", "Overview", "layout", "#4f6bed"], ["diagram", "Architecture", "flow", "#0e9f7e"],
+              ["api", "API map", "plug", "#e08a1e"], ["qa", "Interview Q&A", "help", "#8b5cf6"], ["chat", "Ask the repo", "chat", "#d6455d"]];
+function normalize(r) {
+  const a = r.architecture;
+  a.components.forEach((c) => { c.layer = c.layer || (c.has_routes ? "api" : "logic"); c.files_list = c.files_list || []; c.symbols = c.symbols || []; c.languages = c.languages || {}; c.loc = c.loc || 0; c.depends_on = c.depends_on || []; });
+  a.edges = a.edges || a.components.flatMap((c) => c.depends_on.map((d) => ({ from: c.name, to: d, weight: 1 })));
+  r.endpoints.forEach((e) => {
+    if (e.component) return;
+    const c = a.components.find((k) => k.name === "root" ? !e.file.includes("/") : e.file.startsWith(k.name + "/"));
+    e.component = c ? c.name : "";
+  });
+}
+function showReport(r) {
+  normalize(r); S.report = r; S.flowReady = false; clearSel();
+  document.body.classList.add("compact", "has-result");
+  ["#progress", "#error"].forEach((s) => $(s).classList.add("hidden"));
+  $("#result").classList.remove("hidden");
+  $("#repoName").innerHTML = `<a href="${esc(r.repo_url)}" target="_blank" rel="noopener noreferrer">${esc(repoName(r.repo_url))}</a>`;
+  $("#commit").textContent = "Commit " + r.commit_sha.slice(0, 8);
+  $("#sRepo").textContent = repoName(r.repo_url); $("#sCommit").textContent = r.commit_sha.slice(0, 8);
+  const counts = { diagram: r.architecture.components.length, api: r.endpoints.length, qa: r.qa.length };
+  $("#nav").innerHTML = TABS.map(([id, label, icon, color]) =>
+    `<button class="navbtn" data-t="${id}" style="--c:${color}">${ic(icon)}<span>${esc(label)}</span>${counts[id] ? `<em>${counts[id]}</em>` : ""}</button>`).join("");
+  renderOverview(r); renderDiagramPanel(r); renderApi(r); renderQA(r); renderChat();
+  selectTab("overview");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function selectTab(id) {
+  $$(".navbtn").forEach((b) => b.setAttribute("aria-current", b.dataset.t === id ? "page" : "false"));
+  TABS.forEach(([t]) => $("#p-" + t).classList.toggle("hidden", t !== id));
+  if (id !== "diagram") closeDrawer();
+  if (id === "diagram") { ensureFlow(); requestAnimationFrame(layoutFlow); }
+}
+$("#nav").onclick = (e) => { const b = e.target.closest(".navbtn"); if (b) { selectTab(b.dataset.t); if (innerWidth > 900) window.scrollTo({ top: 0, behavior: "smooth" }); } };
+
+/* ---------- overview ---------- */
+function renderOverview(r) {
+  const comps = r.architecture.components;
+  const total = Object.values(r.languages).reduce((a, b) => a + b, 0) || 1;
+  const langs = Object.entries(r.languages);
+  const byLayer = {}; comps.forEach((c) => { byLayer[c.layer] = (byLayer[c.layer] || 0) + 1; });
+  const stat = (n, label, icon, color) => `<div class="stat" style="--c:${color}"><span class="ico">${ic(icon)}</span><div><b>${n}</b><span>${label}</span></div></div>`;
+  $("#p-overview").innerHTML = `
+    <div class="stats">${stat(r.stats.files, "Files read", "file", "#4f6bed")}${stat(comps.length, "Components", "layers", "#0e9f7e")}
+      ${stat(r.stats.routes, "Routes found", "route", "#e08a1e")}${stat(langs.length, "Languages", "lang", "#8b5cf6")}</div>
+    <div class="card"><h2>Summary</h2><p class="lead">${esc(r.overview)}</p>
+      <div>${r.stack.map((s, i) => `<span class="pill" style="--c:${COLORS[i % COLORS.length]}">${esc(s)}</span>`).join("")}</div></div>
+    <div class="card"><h3>Layers at a glance</h3>
+      <div class="layerchips">${Object.entries(byLayer).map(([k, n]) => `<button class="lchip" data-goarch style="--c:${LAYERS[k].color}"><span class="ico">${ic(LAYERS[k].icon)}</span>${esc(LAYERS[k].label)}<b>${n}</b></button>`).join("")}</div>
+      <p class="muted small" style="margin:12px 0 0">Open the Architecture section to see how these layers connect.</p></div>
+    <div class="card"><h3>Language composition</h3>
+      <div class="langbar">${langs.map(([k, v], i) => `<i title="${esc(k)}: ${v} files" style="width:${(v / total * 100).toFixed(1)}%;background:${COLORS[i % COLORS.length]}"></i>`).join("")}</div>
+      <div class="legend">${langs.map(([k, v], i) => `<span style="--c:${COLORS[i % COLORS.length]}">${esc(k)} (${v})</span>`).join("")}</div></div>
+    <div class="card"><h3>How the system fits together</h3><p>${esc(r.architecture.summary)}</p>
+      <h3 style="margin-top:16px">Data flow</h3><p style="margin:0">${esc(r.architecture.data_flow)}</p></div>`;
+  $$("[data-goarch]", $("#p-overview")).forEach((b) => b.onclick = () => selectTab("diagram"));
+}
+
+/* ---------- architecture flow ---------- */
+function renderDiagramPanel(r) {
+  $("#p-diagram").innerHTML = `
+    <div class="card">
+      <div class="arch-top"><div><h2 style="margin:0">Architecture flow</h2>
+        <div class="legend2" id="legend"></div></div></div>
+      <div class="flowbox"><div class="flow" id="flow"></div></div>
+      <div class="tap" id="tap">${ic("spark")}Click any tile to see its files, symbols, endpoints and dependencies.</div>
+    </div>`;
+}
+function virtualClient() {
+  const eps = S.report.endpoints, apiComps = S.report.architecture.components.filter((c) => c.has_routes);
+  return { name: "__client", title: "HTTP clients", virtual: true, layer: "client", has_routes: false, files: 0, loc: 0,
+    responsibility: `Browsers, mobile apps and other services call the ${plural(eps.length || apiComps.length, "REST endpoint")} exposed by this repository.`,
+    files_list: [], symbols: [], languages: {}, depends_on: apiComps.map((c) => c.name) };
+}
+function ensureFlow() {
+  if (S.flowReady) return;
+  const r = S.report, a = r.architecture, comps = a.components;
+  const hasApi = comps.some((c) => c.has_routes) || r.endpoints.length > 0;
+  const groups = { client: [], api: [], logic: [], data: [], support: [] };
+  comps.forEach((c) => groups[c.layer === "auth" ? "logic" : c.layer].push(c));
+  if (hasApi) groups.client.unshift(virtualClient());
+  const defs = [["client", "Clients"], ["api", "Interface & API"], ["logic", "Business logic"], ["data", "Data & storage"]].filter(([k]) => groups[k].length);
+
+  // edges (+ client -> API components)
+  S.edges = a.edges.map((e) => ({ ...e, label: plural(e.weight, "import") }));
+  if (hasApi) comps.filter((c) => c.has_routes).forEach((c) => {
+    const n = r.endpoints.filter((e) => e.component === c.name).length || 1;
+    S.edges.push({ from: "__client", to: c.name, weight: n, label: plural(n, "route") });
+  });
+  // order tiles within columns by the average position of their predecessors (fewer crossings)
+  const pos = new Map(); defs.forEach(([k], ci) => { if (ci === 0) groups[k].forEach((c, i) => pos.set(c.name, i)); });
+  defs.slice(1).forEach(([k]) => {
+    const score = (c) => { const p = S.edges.filter((e) => e.to === c.name && pos.has(e.from)).map((e) => pos.get(e.from)); return p.length ? p.reduce((x, y) => x + y, 0) / p.length : 99; };
+    groups[k].sort((x, y) => score(x) - score(y)).forEach((c, i) => pos.set(c.name, i));
+  });
+  const colIndex = new Map(); defs.forEach(([k], i) => groups[k].forEach((c) => colIndex.set(c.name, i))); groups.support.forEach((c) => colIndex.set(c.name, 99));
+  const colorOf = (n) => (n === "__client" ? LAYERS.client : layerOf(comps.find((c) => c.name === n) || {})).color;
+  S.edges.forEach((e) => { e.color = colorOf(e.from); e.weak = colIndex.get(e.from) === 99 || colIndex.get(e.to) < colIndex.get(e.from); });
+
+  const inOut = (n) => ({ out: a.edges.filter((e) => e.from === n).length, inn: a.edges.filter((e) => e.to === n).length });
+  const tile = (c) => {
+    const L = layerOf(c), io = inOut(c.name), eps = r.endpoints.filter((e) => e.component === c.name).length;
+    return `<div class="tile" role="button" tabindex="0" data-n="${esc(c.name)}" aria-pressed="false" style="--c:${L.color}">
+      <div class="t-top"><span class="t-ic">${ic(L.icon)}</span><div><div class="t-name">${esc(c.title || c.name)}</div>
+        <div class="t-sub">${c.virtual ? "Entry point" : plural(c.files, "file")}</div></div></div>
+      <div class="t-desc">${esc(c.responsibility)}</div>
+      <div class="t-foot">${eps ? `<span class="t-chip">${plural(eps, "route")}</span>` : ""}${c.virtual ? "" : `<span class="t-chip">out ${io.out}</span><span class="t-chip">in ${io.inn}</span>`}</div></div>`;
+  };
+  const cnt = (k) => groups[k].filter((c) => !c.virtual).length || groups[k].length;
+  $("#flow").innerHTML = `
+    <div class="ribbon">Request flow<i></i></div>
+    <div class="heads" style="grid-template-columns:repeat(${defs.length},minmax(0,1fr))">${defs.map(([k, l]) => `<div class="head" style="--c:${LAYERS[k].color}">${ic(LAYERS[k].icon)}${esc(l)}<em>${cnt(k)}</em></div>`).join("")}</div>
+    <div class="cols" style="grid-template-columns:repeat(${defs.length},minmax(0,1fr))">${defs.map(([k, l]) => `<div class="col"><div class="col-title" style="--c:${LAYERS[k].color}">${ic(LAYERS[k].icon)}${esc(l)}</div><div class="tiles">${groups[k].map(tile).join("")}</div></div>`).join("")}</div>
+    ${groups.support.length ? `<div class="support"><div class="head" style="--c:${LAYERS.support.color}">${ic("wrench")}Supporting code<em>${groups.support.length}</em></div><div class="tiles">${groups.support.map(tile).join("")}</div></div>` : ""}
+    <svg class="edges" id="edges" aria-hidden="true"></svg>`;
+  $("#legend").innerHTML = [...new Set(["client", ...Object.keys(groups).filter((k) => groups[k].length), ...(comps.some((c) => c.layer === "auth") ? ["auth"] : [])])]
+    .filter((k) => k !== "client" || hasApi).map((k) => `<span><b style="color:${LAYERS[k].color}">&#9679;</b> ${esc(LAYERS[k].label)}</span>`).join("") +
+    '<span class="ln"><i></i>Dependency (thicker = more imports)</span><span class="ln"><i class="d"></i>Back-reference or supporting code</span>';
+
+  S.tiles = new Map($$(".tile", $("#flow")).map((el) => [el.dataset.n, el]));
+  S.tiles.forEach((el, n) => {
+    el.onclick = (e) => { e.stopPropagation(); select(n); };
+    el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(n); } };
+    el.onmouseenter = el.onfocus = () => { if (!S.sel) highlight(n); };
+    el.onmouseleave = el.onblur = () => { if (!S.sel) highlight(null); };
+  });
+  $("#flow").onclick = (e) => { if (!e.target.closest(".tile") && S.sel) clearSel(); };
+  if (S.ro) S.ro.disconnect();
+  S.ro = new ResizeObserver(() => requestAnimationFrame(layoutFlow)); S.ro.observe($("#flow"));
+  S.flowReady = true;
+}
+function layoutFlow() {
+  const flow = $("#flow"); if (!flow || !S.flowReady || flow.offsetParent === null) return;
+  const stack = flow.clientWidth < 780;
+  flow.classList.toggle("stack", stack); $("#legend").classList.toggle("nolines", stack);
+  drawEdges();
+}
+function drawEdges() {
+  const flow = $("#flow"), svg = $("#edges"); if (!flow || !svg) return;
+  if (flow.classList.contains("stack")) { svg.style.display = "none"; S.edgeEls = []; return; }
+  svg.style.display = "block";
+  const fr = flow.getBoundingClientRect();
+  svg.setAttribute("width", flow.scrollWidth); svg.setAttribute("height", flow.scrollHeight);
+  const rect = (n) => { const b = S.tiles.get(n).getBoundingClientRect(); return { x: b.left - fr.left, y: b.top - fr.top, w: b.width, h: b.height }; };
+  const colors = [...new Set(S.edges.map((e) => e.color))];
+  const pairs = new Set(S.edges.map((e) => e.from + ">" + e.to));
+  let html = `<defs>${colors.map((c) => `<marker id="ah-${c.slice(1)}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="13" orient="auto"><path d="M0 1L10 5L0 9z" fill="${c}"/></marker>`).join("")}</defs>`;
+  S.edges.forEach((e, i) => {
+    if (!S.tiles.has(e.from) || !S.tiles.has(e.to)) return;
+    const A = rect(e.from), B = rect(e.to), off = pairs.has(e.to + ">" + e.from) ? (e.from < e.to ? -8 : 8) : 0;
+    let s, t, c1, c2;
+    if (B.x >= A.x + A.w - 4) { s = [A.x + A.w, A.y + A.h / 2 + off]; t = [B.x, B.y + B.h / 2 + off]; const d = Math.max(40, (t[0] - s[0]) * 0.5); c1 = [s[0] + d, s[1]]; c2 = [t[0] - d, t[1]]; }
+    else if (B.x + B.w <= A.x + 4) { s = [A.x, A.y + A.h / 2 + off]; t = [B.x + B.w, B.y + B.h / 2 + off]; const d = Math.max(40, (s[0] - t[0]) * 0.5); c1 = [s[0] - d, s[1]]; c2 = [t[0] + d, t[1]]; }
+    else if (B.y >= A.y + A.h - 4) { s = [A.x + A.w / 2 + off, A.y + A.h]; t = [B.x + B.w / 2 + off, B.y]; const d = Math.max(30, (t[1] - s[1]) * 0.5); c1 = [s[0], s[1] + d]; c2 = [t[0], t[1] - d]; }
+    else { s = [A.x + A.w / 2 + off, A.y]; t = [B.x + B.w / 2 + off, B.y + B.h]; const d = Math.max(30, (s[1] - t[1]) * 0.5); c1 = [s[0], s[1] - d]; c2 = [t[0], t[1] + d]; }
+    const d = `M${s[0]},${s[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${t[0]},${t[1]}`;
+    const mx = 0.125 * s[0] + 0.375 * c1[0] + 0.375 * c2[0] + 0.125 * t[0], my = 0.125 * s[1] + 0.375 * c1[1] + 0.375 * c2[1] + 0.125 * t[1];
+    const sw = (1.7 + Math.min(2.6, Math.log2(e.weight + 1) * 0.9)).toFixed(1), w = 16 + e.label.length * 6;
+    html += `<g class="edge${e.weak ? " weak" : ""}" data-i="${i}"><path class="hit" d="${d}"/>
+      <path class="line" d="${d}" style="stroke:${e.color};stroke-width:${sw}" marker-end="url(#ah-${e.color.slice(1)})"/>
+      <g class="lbl" transform="translate(${mx.toFixed(1)},${my.toFixed(1)})"><rect x="${-w / 2}" y="-10" width="${w}" height="20" rx="10" style="fill:var(--surface);stroke:${e.color}"/>
+      <text text-anchor="middle" dy="4" font-size="10.5" font-weight="700" style="fill:${e.color}">${esc(e.label)}</text></g>
+      <title>${esc(e.from === "__client" ? "HTTP clients" : e.from)} to ${esc(e.to)}: ${esc(e.label)}</title></g>`;
+  });
+  svg.innerHTML = html;
+  S.edgeEls = $$(".edge", svg).map((g) => ({ g, e: S.edges[+g.dataset.i] }));
+  highlight(S.sel);
+}
+function highlight(name) {
+  const rel = new Set();
+  if (name) { rel.add(name); S.edges.forEach((e) => { if (e.from === name) rel.add(e.to); if (e.to === name) rel.add(e.from); }); }
+  S.tiles.forEach((el, n) => { el.classList.toggle("sel", n === S.sel); el.classList.toggle("dim", !!name && !rel.has(n)); el.setAttribute("aria-pressed", n === S.sel); });
+  S.edgeEls.forEach(({ g, e }) => { const on = !!name && (e.from === name || e.to === name); g.classList.toggle("on", on); g.classList.toggle("faded", !!name && !on); });
+}
+function select(name) {
+  S.sel = name; highlight(name); openDetail(name);
+  const el = S.tiles.get(name); if (el && innerWidth > 760) el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+}
+function clearSel() { S.sel = null; highlight(null); closeDrawer(); }
+
+/* ---------- detail drawer ---------- */
+function closeDrawer() { $("#drawer").classList.remove("open"); $("#drawer").setAttribute("aria-hidden", "true"); $("#scrim").classList.remove("on"); }
+$("#scrim").onclick = () => clearSel();
+function openDetail(name) {
+  const r = S.report, a = r.architecture;
+  const c = name === "__client" ? virtualClient() : a.components.find((k) => k.name === name); if (!c) return;
+  const L = layerOf(c), eps = r.endpoints.filter((e) => e.component === name);
+  const outs = a.edges.filter((e) => e.from === name), ins = a.edges.filter((e) => e.to === name);
+  const chip = (n, w, label) => { const k = a.components.find((x) => x.name === n); const col = k ? layerOf(k).color : LAYERS.client.color;
+    return `<button class="dchip" data-go="${esc(n)}" style="--c:${col}">${ic(k ? layerOf(k).icon : "monitor")}${esc(label || n)}${w ? `<small>${w}</small>` : ""}</button>`; };
+  const treeUrl = name === "root" ? r.repo_url : `${r.repo_url}/tree/${r.commit_sha}/${encPath(name)}`;
+  const sec = (title, icon, body) => `<div class="d-sec"><h4>${ic(icon)}${title}</h4>${body}</div>`;
+  const epRow = (e) => `<div class="d-ep"><span class="m m-${esc(e.method.split("/")[0])}">${esc(e.method)}</span><code>${esc(e.path)}</code>${e.description ? `<small>${esc(e.description)}</small>` : ""}</div>`;
+  let body = sec("What it does", "spark", `<p>${esc(c.responsibility)}</p>`);
+  if (c.virtual) {
+    body += sec("Calls into", "arrowout", `<div class="dchips">${c.depends_on.map((n) => chip(n, plural(r.endpoints.filter((e) => e.component === n).length, "route"))).join("") || '<span class="none">No API components</span>'}</div>`);
+    body += sec(`Entry points (${r.endpoints.length})`, "route", r.endpoints.slice(0, 14).map(epRow).join("") + (r.endpoints.length > 14 ? `<p class="none" style="margin-top:8px">and ${r.endpoints.length - 14} more in the API map.</p>` : "") || '<span class="none">No routes detected</span>');
+  } else {
+    body += `<div class="d-sec"><div class="d-stats">
+      <div class="d-stat"><b>${c.files}</b><span>Files</span></div><div class="d-stat"><b>${c.loc.toLocaleString()}</b><span>Lines of code</span></div>
+      <div class="d-stat"><b>${eps.length}</b><span>Endpoints</span></div>
+      <div class="d-stat"><b>${outs.length}</b><span>Calls into</span></div><div class="d-stat"><b>${ins.length}</b><span>Called by</span></div>
+      <div class="d-stat"><b>${Object.keys(c.languages).length || 1}</b><span>Languages</span></div></div></div>`;
+    body += sec("Receives calls from", "arrowin", `<div class="dchips">${[...(c.has_routes ? [chip("__client", "", "HTTP clients")] : []), ...ins.map((e) => chip(e.from, plural(e.weight, "import")))].join("") || '<span class="none">Nothing in this repository imports it</span>'}</div>`);
+    body += sec("Calls into", "arrowout", `<div class="dchips">${outs.map((e) => chip(e.to, plural(e.weight, "import"))).join("") || '<span class="none">No internal dependencies</span>'}</div>`);
+    if (eps.length) body += sec(`Exposed endpoints (${eps.length})`, "route", eps.slice(0, 15).map(epRow).join("") + (eps.length > 15 ? `<p class="none" style="margin-top:8px">and ${eps.length - 15} more in the API map.</p>` : ""));
+    if (c.files_list.length) body += sec("Key files", "file", c.files_list.map((f) => `<a class="d-file" href="${esc(r.repo_url)}/blob/${esc(r.commit_sha)}/${encPath(f.path)}" target="_blank" rel="noopener noreferrer">${ic("file")}${esc(f.path.slice(name === "root" ? 0 : name.length + 1) || f.path)}<small>${f.lines} lines</small></a>`).join(""));
+    if (c.symbols.length) body += sec("Key classes and functions", "braces", c.symbols.map((s) => `<a class="d-sym" href="${esc(r.repo_url)}/blob/${esc(r.commit_sha)}/${encPath(s.file)}#L${s.line}" target="_blank" rel="noopener noreferrer">${ic(s.kind === "class" ? "cube" : "braces")}${esc(s.name)}${s.kind === "function" ? "()" : ""}<small>${esc(s.file.split("/").pop())}:${s.line}</small></a>`).join(""));
+    if (Object.keys(c.languages).length) body += sec("Languages", "lang", Object.entries(c.languages).map(([k, v], i) => `<span class="pill" style="--c:${COLORS[i % COLORS.length]}">${esc(k)} (${v})</span>`).join(""));
+    body += `<a class="d-link" href="${esc(treeUrl)}" target="_blank" rel="noopener noreferrer">${ic("ext")}View this folder on GitHub</a>`;
+  }
+  const dr = $("#drawer");
+  dr.style.setProperty("--c", L.color);
+  dr.innerHTML = `<div class="d-head" style="--c:${L.color}"><div class="d-title"><span class="ico" style="--c:${L.color}">${ic(L.icon)}</span><div><h3 id="dTitle">${esc(c.title || c.name)}</h3><span class="lay">${esc(L.what)}</span></div></div>
+    <button class="d-x" id="dX" aria-label="Close details">${ic("x")}</button></div><div class="d-body">${body}</div>`;
+  dr.classList.add("open"); dr.setAttribute("aria-hidden", "false"); dr.scrollTop = 0;
+  if (innerWidth <= 760) $("#scrim").classList.add("on");
+  $("#dX").onclick = () => clearSel();
+  $$("[data-go]", dr).forEach((b) => b.onclick = () => { const n = b.dataset.go; if (S.tiles.has(n)) select(n); });
+}
+
+/* ---------- API map ---------- */
+function renderApi(r) {
+  const eps = r.endpoints, methods = [...new Set(eps.map((e) => e.method))], st = { q: "", m: new Set() };
+  const colorOfComp = (n) => { const c = r.architecture.components.find((k) => k.name === n); return c ? layerOf(c).color : "#64748b"; };
+  $("#p-api").innerHTML = eps.length ? `
+    <div class="card"><h2>REST API map</h2>
+      <div class="filters"><input class="search" id="aq" placeholder="Search path, description, handler or file" aria-label="Search endpoints">
+        ${methods.map((m) => `<button class="chip" data-m="${esc(m)}">${esc(m)}</button>`).join("")}</div>
+      <div class="muted small" id="acount" style="margin-bottom:4px"></div><div id="alist"></div></div>`
+    : `<div class="card empty-state"><h2>No REST routes detected</h2><p>Supported frameworks: FastAPI, Flask, Express and Spring. This repository may use another framework or may not expose an HTTP API.</p></div>`;
+  if (!eps.length) return;
+  const draw = () => {
+    const q = st.q.toLowerCase();
+    const rows = eps.filter((e) => (!st.m.size || st.m.has(e.method)) && (!q || [e.path, e.description, e.file, e.handler].join(" ").toLowerCase().includes(q)));
+    $("#acount").textContent = `Showing ${rows.length} of ${eps.length} endpoints. Click a path to copy it, or a component tag to open it in the flow.`;
+    $("#alist").innerHTML = rows.map((e) => `<div class="ep"><span class="m m-${esc(e.method.split("/")[0])}">${esc(e.method)}</span>
+      <div><code class="path" data-p="${esc(e.path)}" title="Copy path">${esc(e.path)}</code>${e.description ? `<p>${esc(e.description)}</p>` : ""}${e.handler ? `<p class="small">Handler: <code>${esc(e.handler)}</code></p>` : ""}</div>
+      <div class="meta">${e.component ? `<button class="ctag" data-c="${esc(e.component)}" style="--c:${colorOfComp(e.component)}">${esc(e.component)}</button>` : ""}<span class="src">${esc(e.file)}:${e.line}</span></div></div>`).join("") || '<div class="empty-state">No endpoints match your filters.</div>';
+  };
+  $("#aq").oninput = (e) => { st.q = e.target.value; draw(); };
+  $$("#p-api [data-m]").forEach((b) => b.onclick = () => { st.m.has(b.dataset.m) ? st.m.delete(b.dataset.m) : st.m.add(b.dataset.m); b.classList.toggle("on"); draw(); });
+  $("#alist").onclick = (e) => {
+    const p = e.target.closest(".path"); if (p) return copy(p.dataset.p, "Path copied");
+    const c = e.target.closest(".ctag"); if (c) { selectTab("diagram"); requestAnimationFrame(() => requestAnimationFrame(() => S.tiles.has(c.dataset.c) && select(c.dataset.c))); }
+  };
+  draw();
+}
+
+/* ---------- Q&A and chat ---------- */
+function renderQA(r) {
+  $("#p-qa").innerHTML = `
+    <div class="card"><div class="arch-top" style="margin:0"><div><h2 style="margin:0">System design questions</h2>
+      <span class="muted small">Generated from this codebase. Try answering aloud before opening each one.</span></div>
+      <div style="display:flex;gap:8px"><button class="btn ghost sm" id="qOpen">Expand all</button><button class="btn ghost sm" id="qClose">Collapse all</button></div></div></div>
+    ${r.qa.map((q, i) => `<details class="qa"><summary><span class="no">${i + 1}</span><span>${esc(q.question)}</span></summary><div class="ans">${esc(q.answer)}</div></details>`).join("")}`;
+  $("#qOpen").onclick = () => $$("details.qa").forEach((d) => d.open = true);
+  $("#qClose").onclick = () => $$("details.qa").forEach((d) => d.open = false);
+}
+const SUGGEST = ["Where is authentication handled?", "How does data flow through the application?", "Which database is used, and where?", "What would break first under heavy load?"];
+function renderChat() {
+  $("#p-chat").innerHTML = `
+    <div class="card"><h2>Ask the repository</h2><p class="muted" style="margin:0">Answers are retrieved from the indexed code and cite the files they used.</p></div>
+    <div class="sugg">${SUGGEST.map((s) => `<button class="chip" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+    <div class="thread" id="thread"></div>
+    <form class="composer" id="cform" autocomplete="off"><input id="cq" placeholder="Ask about this codebase" aria-label="Your question"><button class="btn" id="cgo" type="submit">Ask</button></form>`;
+  $$("#p-chat [data-s]").forEach((b) => b.onclick = () => ask(b.dataset.s));
+  $("#cform").onsubmit = (e) => { e.preventDefault(); ask($("#cq").value.trim()); };
+}
+async function ask(q) {
+  if (q.length < 3) return;
+  $("#cq").value = ""; $("#cgo").disabled = true;
+  const th = $("#thread");
+  th.insertAdjacentHTML("beforeend", `<div class="msg u">${esc(q)}</div>`);
+  const a = document.createElement("div"); a.className = "msg a"; a.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>'; th.append(a);
+  a.scrollIntoView({ behavior: "smooth", block: "center" });
+  try {
+    const r = await post("/ask", { job_id: S.jobId, question: q });
+    a.innerHTML = esc(r.answer) + `<div class="srcs">${r.sources.map((s) => `<code>${esc(s.path)}:${s.start}-${s.end}</code>`).join("")}</div>`;
+  } catch (e) { a.innerHTML = `<span style="color:var(--danger)">${esc(e.message)}</span>`; }
+  $("#cgo").disabled = false; a.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/* ---------- export ---------- */
+const cell = (s) => String(s ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+function toMarkdown(r) {
+  const a = r.architecture;
+  return [`# ${repoName(r.repo_url)}`, `Commit \`${r.commit_sha.slice(0, 8)}\``, "", "## Overview", r.overview, "", `**Stack:** ${r.stack.join(", ") || "n/a"}`, "",
+    "## Architecture", a.summary, "", "### Data flow", a.data_flow, "", "```mermaid", r.mermaid, "```", "", "### Components", "| Component | Layer | Responsibility | Depends on |", "|---|---|---|---|",
+    ...a.components.map((c) => `| ${cell(c.name)} | ${cell(layerOf(c).label)} | ${cell(c.responsibility)} | ${cell(c.depends_on.join(", ") || "-")} |`), "",
+    "## REST API", "| Method | Path | Description | Source |", "|---|---|---|---|",
+    ...r.endpoints.map((e) => `| ${e.method} | \`${cell(e.path)}\` | ${cell(e.description)} | ${cell(e.file)}:${e.line} |`), "",
+    "## Interview Q&A", ...r.qa.flatMap((q, i) => [`**${i + 1}. ${q.question}**`, "", q.answer, ""])].join("\n");
+}
+togglePop($("#expBtn"), $("#expMenu"));
+$("#expMenu").onclick = (e) => {
+  const b = e.target.closest("[data-x]"); if (!b || !S.report) return;
+  const base = repoName(S.report.repo_url).replace("/", "_"); $("#expMenu").classList.add("hidden");
+  if (b.dataset.x === "md") download(base + ".md", toMarkdown(S.report), "text/markdown");
+  else if (b.dataset.x === "json") download(base + ".json", JSON.stringify(S.report, null, 2), "application/json");
+  else if (b.dataset.x === "mm") copy(S.report.mermaid, "Mermaid code copied");
+  else { $$(".panel").forEach((p) => p.classList.remove("hidden")); ensureFlow(); layoutFlow(); setTimeout(() => { window.print(); selectTab($(".navbtn[aria-current=page]")?.dataset.t || "overview"); }, 150); }
+};
+</script>
+</body>
+</html>
