@@ -8,5 +8,5 @@ pydantic>=2.6
 psycopg2-binary>=2.9
 pytest>=8.0
 groq
-langchain-huggingface
-sentence-transformers
+google-genai
+python-dotenv
