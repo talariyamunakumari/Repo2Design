@@ -72,7 +72,7 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=16):
             # --- Cloud Path (Google Gemini Cloud API - Zero Server RAM used!) ---
             for x in texts:
                 response = gemini_client.models.embed_content(
-                    model="models/text-embedding-004",
+                    model="gemini-embedding-001",
                     contents=prefix + x[:2000]
                 )
                 # Extract vector array dimensions safely
