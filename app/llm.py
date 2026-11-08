@@ -79,7 +79,7 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=16):
                     model="gemini-embedding-001",
                     contents=prefix + x[:2000]
                 )
-                vecs.append(response.embeddings.values)
+                vecs.append(response.embedding.values)
 
         else:
             # --- Local Path (Ollama) ---
