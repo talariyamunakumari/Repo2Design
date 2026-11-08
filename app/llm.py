@@ -69,14 +69,18 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=16):
     t, vecs = time.time(), []
     try:
         if config.IS_CLOUD:
-            # --- Cloud Path (Google Gemini Cloud API - Zero Server RAM used!) ---
-            for x in texts:
+            # --- Cloud Path (Google Gemini Cloud API - Optimized to bypass 429 Quota Rate Limits) ---
+            for idx, x in enumerate(texts):
+                # Rate limit pacing: pause briefly after every chunk to prevent exceeding 30k tokens/min
+                if idx > 0:
+                    time.sleep(1.0)
+                    
                 response = gemini_client.models.embed_content(
                     model="gemini-embedding-001",
                     contents=prefix + x[:2000]
                 )
-                # Extract vector array dimensions safely
-                vecs.append(response.embeddings[0].values)
+                vecs.append(response.embeddings.values)
+
         else:
             # --- Local Path (Ollama) ---
             for i in range(0, len(texts), batch):
