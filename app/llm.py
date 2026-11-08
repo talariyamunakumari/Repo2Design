@@ -64,23 +64,30 @@ def ask(prompt, schema=None, system=SYSTEM, stage="generic", job_id=None, retrie
     raise RuntimeError(f"LLM call failed at stage '{stage}': {last}")
 
 
-def embed(texts, kind="document", stage="embed", job_id=None, batch=16):
+def embed(texts, kind="document", stage="embed", job_id=None, batch=32):
     prefix = "search_document: " if kind == "document" else "search_query: "
     t, vecs = time.time(), []
     try:
         if config.IS_CLOUD:
-            # --- Cloud Path (Google Gemini Cloud API - Optimized to bypass 429 Quota Rate Limits) ---
-            for idx, x in enumerate(texts):
-                # Rate limit pacing: pause briefly after every chunk to prevent exceeding 30k tokens/min
-                if idx > 0:
-                    time.sleep(1.0)
-                    
+            # --- Cloud Path (Google Gemini Cloud API - Batch Optimized) ---
+            # Process texts in groups of 32 chunks per API call to protect daily request limits
+            for i in range(0, len(texts), batch):
+                # Pacing pause between batches to protect tokens-per-minute limits
+                if i > 0:
+                    time.sleep(2.0)
+                
+                # Format a batch slice of text data chunks
+                batch_texts = [prefix + x[:2000] for x in texts[i:i + batch]]
+                
+                # Make a single call passing multiple contents at once
                 response = gemini_client.models.embed_content(
-                    model="gemini-embedding-001",
-                    contents=prefix + x[:2000]
+                    model=config.EMBED_MODEL,
+                    contents=batch_texts
                 )
-                vecs.append(response.embeddings[0].values)
-
+                
+                # Extract the nested vector lists out of the batch array response object
+                for embedding in response.embeddings:
+                    vecs.append(embedding.values)
         else:
             # --- Local Path (Ollama) ---
             for i in range(0, len(texts), batch):
@@ -94,3 +101,4 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=16):
     v = np.array(vecs, dtype="float32")
     norms = np.linalg.norm(v, axis=1, keepdims=True)
     return v / np.where(norms == 0, 1, norms)
+
