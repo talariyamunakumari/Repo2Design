@@ -46,7 +46,7 @@ def ask(prompt, schema=None, system=SYSTEM, stage="generic", job_id=None, retrie
                     temperature=0.2,
                     **kwargs
                 )
-                text = r.choices.message.content
+                text = r.choices[0].message.content
             else:
                 kwargs = {"format": schema.model_json_schema()} if schema else {}
                 r = ollama_client.chat(model=config.LLM_MODEL,
