@@ -1,4 +1,7 @@
-"""Thin LLM wrapper: dynamically switches between Cloud (Groq + Gemini API) and Local (Ollama)."""
+"""
+Thin LLM wrapper: dynamically switches between Cloud (Groq + Gemini API) and Local (Ollama).
+Fully optimized with batching and automatic fallback key rotation to remain 100% free.
+"""
 import time
 import os
 import json
@@ -6,20 +9,20 @@ import numpy as np
 
 from . import config, db
 
-# Lazy-initialize clients to prevent crashes based on environment settings
+# Global variables for clients
+ollama_client = None
+groq_client = None
+gemini_client = None
+
 if config.IS_CLOUD:
     from groq import Groq
     from google import genai
     
-    ollama_client = None
     groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-    # Uses lightweight cloud clients instead of local RAM
     gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 else:
     import ollama
     ollama_client = ollama.Client(host=config.OLLAMA_HOST, timeout=config.LLM_TIMEOUT)
-    groq_client = None
-    gemini_client = None
 
 SYSTEM = ("You are a senior software architect. Use ONLY the provided facts and code. "
           "If something is not shown, say 'unknown'. Be concise and concrete.")
@@ -65,10 +68,12 @@ def ask(prompt, schema=None, system=SYSTEM, stage="generic", job_id=None, retrie
 
 
 def embed(texts, kind="document", stage="embed", job_id=None, batch=32):
+    global gemini_client  # Declared globally to prevent scoping runtime errors during rotation
+    
     prefix = "search_document: " if kind == "document" else "search_query: "
     t, vecs = time.time(), []
     
-    # Set up key rotation to switch automatically if a key hits a daily 429 quota wall
+    # Track available API tokens for automated rotation safety checks
     api_keys = [os.environ.get("GEMINI_API_KEY")]
     if os.environ.get("GEMINI_API_KEY_BACKUP"):
         api_keys.append(os.environ.get("GEMINI_API_KEY_BACKUP"))
@@ -79,7 +84,7 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=32):
         # --- Cloud Path (Google Gemini Cloud API with Smart Batching + Key Rotation) ---
         i = 0
         while i < len(texts):
-            # Pacing delay between batch executions
+            # Pacing delay between batch calls to stay within free allocation bounds
             if i > 0:
                 time.sleep(2.0)
                 
@@ -90,22 +95,21 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=32):
                     model=config.EMBED_MODEL,
                     contents=batch_texts
                 )
-                # Success: extract vectors and step to next batch slice
+                # Success: extract vectors and increment our slice counter index
                 for embedding in response.embeddings:
                     vecs.append(embedding.values)
                 i += batch
                 
             except Exception as e:
-                # If a 429 quota error hits and we have an unused backup key, rotate to it automatically
+                # If a rate limit or daily limit hits, check if a backup key exists
                 if "429" in str(e) and current_key_idx + 1 < len(api_keys):
                     current_key_idx += 1
-                    print(f"Daily quota hit. Rotating to backup Gemini API Key index: {current_key_idx}")
-                    # Re-initialize client framework with the fresh backup token
+                    print(f"Daily requests limit encountered. Rotating to backup API key index: {current_key_idx}")
                     from google import genai
                     gemini_client = genai.Client(api_key=api_keys[current_key_idx])
-                    continue  # Retry the exact same batch slice with the backup credential
+                    continue  # Repeat the exact same index loop slice using the new backup token
                 else:
-                    # Log failure if no alternate keys remain
+                    # Fail securely if no alternate keys remain or a non-429 error occurs
                     db.log("embed", stage, (time.time() - t) * 1000, model=config.EMBED_MODEL, job_id=job_id, error=e)
                     raise RuntimeError(f"Embedding failed: {e}")
     else:
@@ -118,4 +122,3 @@ def embed(texts, kind="document", stage="embed", job_id=None, batch=32):
     v = np.array(vecs, dtype="float32")
     norms = np.linalg.norm(v, axis=1, keepdims=True)
     return v / np.where(norms == 0, 1, norms)
-
